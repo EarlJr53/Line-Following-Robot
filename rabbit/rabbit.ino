@@ -2,11 +2,11 @@
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 
-int request = 0;
+int request = 1;
 
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
-Adafruit_DCMotor motorL = AFMS.getMotor(1);
-Adafruit_DCMotor motorR = AFMS.getMotor(2);
+Adafruit_DCMotor *motorL = AFMS.getMotor(1);
+Adafruit_DCMotor *motorR = AFMS.getMotor(2);
 
 const int sensorPinL = A0;
 const int sensorPinR = A1;
@@ -28,28 +28,28 @@ void setup()
 
     // Only continue while serial connection is available
     // This means nothing happens until the Python program is run
-    while (!Serial.available())
-    {
-    }
+//    while (!Serial.available())
+//    {
+//    }
 
-    while (request == 0)
-    {
-        request = Serial.readString().toInt();
-    }
+//    while (request == 0)
+//    {
+//        request = Serial.readString().toInt();
+//    }
 
-    motorL->setSpeed(100*request)
-    motorR->setSpeed(100*request)
+    motorL->setSpeed(50*request);
+    motorR->setSpeed(50*request);
 }
 
 
 void loop()
 {
-    if (Serial.readString().toInt() == 0)
-    {
-        motorL->run(RELEASE);
-        motorR->run(RELEASE);
-        exit;
-    }
+//    if (Serial.readString().toInt() == 0)
+//    {
+//        motorL->run(RELEASE);
+//        motorR->run(RELEASE);
+//        exit;
+//    }
     
     sensorL = onLine(analogRead(sensorPinL));
     sensorR = onLine(analogRead(sensorPinR));
@@ -79,12 +79,13 @@ void loop()
 
 bool onLine(float sensorRaw)
 {
-    if (sensorRaw > 100) // Add calibration stuff here
+    Serial.println(sensorRaw);
+    if (sensorRaw > 500) // Add calibration stuff here
     {
-        return False
+        return true;
     }
     else
     {
-        return True
+        return false;
     }
 }

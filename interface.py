@@ -16,7 +16,7 @@ started = False
 
 while not complete:
     decision = input("Press 0 for STOP, 1 for SLOWER, and 2 for FASTER")
-    serialPort.write(bytes(decision))
+    serialPort.write(bytes(decision, 'utf-8'))
     if decision == "0":
         complete = True
     # if decision == "0" and not started:
