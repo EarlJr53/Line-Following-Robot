@@ -2,34 +2,36 @@
 #include <Adafruit_MotorShield.h>
 #include "utility/Adafruit_MS_PWMServoDriver.h"
 
-int request = 1;
+int request = 0;
 
-const int calibrationValue = 500;
+const int calibrationValue = 40;
 
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *motorL = AFMS.getMotor(1);
 Adafruit_DCMotor *motorR = AFMS.getMotor(2);
 
-const int sensorPinLL = A0;
-const int sensorPinCL = A1;
-const int sensorPinC = A2;
-const int sensorPinCR = A3;
-const int sensorPinRR = A4;
+const int sensorPinLL = A3;
+const int sensorPinCL = A2;
+const int sensorPinCR = A1;
+const int sensorPinRR = A0;
 
 int sensors;
 
-float Kp = 0;
+float Kp = .3;
 float Ki = 0;
-float Kd = 0;
+float Kd = .5;
 
 bool on;
+
+unsigned long startTime, elapsedTime;
 
 int P, I, D;
 
 int lastError = 0;
 
-uint8_t maxspeed = 60;
-uint8_t basespeed = 20;
+uint8_t maxspeedraw = 50;
+uint8_t basespeedraw = 30;
+uint8_t maxspeed, basespeed;
 
 void setup()
 {
@@ -43,49 +45,46 @@ void setup()
     
     pinMode(sensorPinLL, INPUT);
     pinMode(sensorPinCL, INPUT);
-    pinMode(sensorPinC, INPUT);
     pinMode(sensorPinCR, INPUT);
     pinMode(sensorPinRR, INPUT);
+
+    motorL->run(RELEASE);
+    motorR->run(RELEASE);
 
     // Only continue while serial connection is available
     // This means nothing happens until the Python program is run
     while (!Serial.available())
     {
     }
-    
-//    while (request == 0)
-//    {
-//        request = Serial.readString().toInt();
-//    }
 
-    request = Serial.readString().toInt();
+    while (request == 0)
+    {
+      request = Serial.readString().toInt();
+    }
+    
+    startTime = millis();
 }
 
 
 void loop()
 {
-    if (request == 0)
+    if (Serial.available() > 0)
     {
-      on = false;
       request = Serial.readString().toInt();
     }
-    else
-    {
-      on = true;
-      maxspeed = maxspeed * request;
-      basespeed = basespeed * request;
-    }
 
-
-    if (on)
+    if (request != 0)
     {
+      maxspeed = maxspeedraw * request;
+      basespeed = basespeedraw * request;
+
       PID_control();
     }
     else {
       motorL->run(RELEASE);
       motorR->run(RELEASE);
+      exit;
     }
-    
 }
 
 void PID_control()
@@ -104,6 +103,7 @@ void PID_control()
   int motorspeedL = basespeed + motorspeed;
   int motorspeedR = basespeed - motorspeed;
 
+
   if (motorspeedL > maxspeed) {
     motorspeedL = maxspeed;
   }
@@ -121,63 +121,65 @@ void PID_control()
   motorR->setSpeed(motorspeedR);
   motorL->run(FORWARD);
   motorR->run(FORWARD);
+
+  Serial.print(motorspeedL);
+  Serial.print(",");
+  Serial.println(motorspeedR);
 }
 
 uint16_t sensorValue()
 {
-  bool sensorLL = onLine(analogRead(sensorPinLL));
-  bool sensorCL = onLine(analogRead(sensorPinCL));
-  bool sensorC = onLine(analogRead(sensorPinC));
-  bool sensorCR = onLine(analogRead(sensorPinCR));
-  bool sensorRR = onLine(analogRead(sensorPinRR));
+  float rawLL = analogRead(sensorPinLL);
+  float rawCL = analogRead(sensorPinCL);
+  float rawCR = analogRead(sensorPinCR);
+  float rawRR = analogRead(sensorPinRR);
+  bool sensorLL = onLine(rawLL);
+  bool sensorCL = onLine(rawCL);
+  bool sensorCR = onLine(rawCR);
+  bool sensorRR = onLine(rawRR);
+  Serial.print(float(millis() - startTime));
+  Serial.print(",");
+  Serial.print(rawLL);
+  Serial.print(",");
+  Serial.print(rawCL);
+  Serial.print(",");
+  Serial.print(rawCR);
+  Serial.print(",");
+  Serial.print(rawRR);
+  Serial.print(",");
 
-  if (!sensorLL && !sensorCL && !sensorC && !sensorCR && !sensorRR)
-  {
-    motorL->run(RELEASE);
-    motorR->run(RELEASE);
-    exit;
-  }
-  else if (sensorLL && !sensorCL && !sensorC && !sensorCR && !sensorRR)
-  {
-    return 900;
-  }
-  else if (sensorLL && sensorCL && !sensorC && !sensorCR && !sensorRR)
+  if (sensorLL && !sensorCL && !sensorCR && !sensorRR)
   {
     return 800;
   }
-  else if (!sensorLL && sensorCL && !sensorC && !sensorCR && !sensorRR)
+  else if (sensorLL && sensorCL && !sensorCR && !sensorRR)
   {
     return 700;
   }
-  else if (!sensorLL && sensorCL && sensorC && !sensorCR && !sensorRR)
+  else if (!sensorLL && sensorCL && !sensorCR && !sensorRR)
   {
     return 600;
   }
-  else if (!sensorLL && !sensorCL && sensorC && !sensorCR && !sensorRR)
+  else if (!sensorLL && sensorCL && sensorCR && !sensorRR)
   {
     return 500;
   }
-  else if (!sensorLL && !sensorCL && sensorC && sensorCR && !sensorRR)
+  else if (!sensorLL && !sensorCL && sensorCR && !sensorRR)
   {
     return 400;
   }
-  else if (!sensorLL && !sensorCL && !sensorC && sensorCR && !sensorRR)
+  else if (!sensorLL && !sensorCL && sensorCR && sensorRR)
   {
     return 300;
   }
-  else if (!sensorLL && !sensorCL && !sensorC && sensorCR && sensorRR)
+  else if (!sensorLL && !sensorCL && !sensorCR && sensorRR)
   {
     return 200;
-  }
-  else if (!sensorLL && !sensorCL && !sensorC && !sensorCR && sensorRR)
-  {
-    return 100;
   }
 }
 
 bool onLine(float sensorRaw)
 {
-    Serial.println(sensorRaw);
     if (sensorRaw > calibrationValue) // Add calibration stuff here
     {
         return true;
