@@ -33,6 +33,8 @@ uint8_t maxspeedraw = 50;
 uint8_t basespeedraw = 30;
 uint8_t maxspeed, basespeed;
 
+String output = "";
+
 void setup()
 {
     AFMS.begin();
@@ -68,10 +70,10 @@ void setup()
 
 void loop()
 {
-    if (Serial.available() > 0)
-    {
-      request = Serial.readString().toInt();
-    }
+//    if (Serial.available() > 0)
+//    {
+//      request = Serial.readString().toInt();
+//    }
 
     if (request != 0)
     {
@@ -122,9 +124,8 @@ void PID_control()
   motorL->run(FORWARD);
   motorR->run(FORWARD);
 
-  Serial.print(motorspeedL);
-  Serial.print(",");
-  Serial.println(motorspeedR);
+  output = output + motorspeedL + "," + motorspeedR;
+  Serial.println(output);
 }
 
 uint16_t sensorValue()
@@ -137,16 +138,16 @@ uint16_t sensorValue()
   bool sensorCL = onLine(rawCL);
   bool sensorCR = onLine(rawCR);
   bool sensorRR = onLine(rawRR);
-  Serial.print(float(millis() - startTime));
-  Serial.print(",");
-  Serial.print(rawLL);
-  Serial.print(",");
-  Serial.print(rawCL);
-  Serial.print(",");
-  Serial.print(rawCR);
-  Serial.print(",");
-  Serial.print(rawRR);
-  Serial.print(",");
+  output = String(float(millis() - startTime)) + "," + rawLL + "," + rawCL + "," + rawCR + "," + rawRR + ",";
+//  Serial.print(",");
+//  Serial.print(rawLL);
+//  Serial.print(",");
+//  Serial.print(rawCL);
+//  Serial.print(",");
+//  Serial.print(rawCR);
+//  Serial.print(",");
+//  Serial.print(rawRR);
+//  Serial.print(",");
 
   if (sensorLL && !sensorCL && !sensorCR && !sensorRR)
   {

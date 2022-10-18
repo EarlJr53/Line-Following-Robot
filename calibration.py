@@ -1,6 +1,8 @@
+"""
+Sensor calibration script
+"""
 
 import serial
-
 
 COMPORT = "/dev/ttyACM0"  # Arduino port on Brooke's Ubuntu install
 BAUDRATE = 9600  # Set baud rate for serial connection
